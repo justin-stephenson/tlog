@@ -1,37 +1,22 @@
 language: c
-sudo: required
-dist: trusty
-env:
-- CONFIGURE_ARGS="" DISTCHECK=yes
-- CONFIGURE_ARGS="--enable-debug" DISTCHECK=yes
-- CONFIGURE_ARGS="--disable-debug" DISTCHECK=yes
-- COVERAGE=yes CFLAGS="--coverage" LDFLAGS="--coverage" CONFIGURE_ARGS="--enable-debug"
-- CLANG_SCAN_BUILD="scan-build --status-bugs"
-compiler:
-- clang
-- gcc
-os: linux
-addons:
-    apt:
-        packages:
-            - autoconf
-            - libjson-c-dev
-            - libcurl4-gnutls-dev
-            - libsystemd-journal-dev
-            - clang
-            - lcov
-            - rpm
+
+services:
+  - docker
+
 before_install:
-- gem install coveralls-lcov
-- mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+  - docker pull fedora
+  - docker ps -a
+  - docker run -it fedora bash
+  - pwd
+  - cat /etc/redhat-release
+
+
 before_script:
-- autoreconf -i -f
-- $CLANG_SCAN_BUILD ./configure --disable-silent-rules $CONFIGURE_ARGS
+    - autoreconf -i -f
+    - $CLANG_SCAN_BUILD ./configure --disable-silent-rules $CONFIGURE_ARGS
 script:
-- $CLANG_SCAN_BUILD make
-- $CLANG_SCAN_BUILD make check
-- make distcheck
-- rpmbuild --define "_tmpfilesdir /usr/lib/tmpfiles.d" -ta --nodeps tlog-*.tar.gz
-- test "x$DISTCHECK" = xyes && make distcheck || true
-after_success:
-- test "x$COVERAGE" = xyes -a "x$CC" = "xgcc" && lcov --compat-libtool --directory ./lib/tlog/ --capture --output-file coverage.info && coveralls-lcov coverage.info
+    - $CLANG_SCAN_BUILD make
+    - $CLANG_SCAN_BUILD make check
+    - make distcheck
+    - rpmbuild --define "_tmpfilesdir /usr/lib/tmpfiles.d" -ta --nodeps tlog-*.tar.gz
+    - test "x$DISTCHECK" = xyes && make distcheck || true
