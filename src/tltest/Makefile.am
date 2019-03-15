@@ -26,6 +26,7 @@ AM_CPPFLAGS = \
 TESTS = \
     tltest-fd-json-reader       \
     tltest-grc                  \
+	tltest-journal-json-writer 	\
     tltest-json-esc             \
     tltest-json-overlay         \
     tltest-json-passthrough     \
@@ -41,6 +42,7 @@ TESTS = \
 check_PROGRAMS = \
     tltest-fd-json-reader       \
     tltest-grc                  \
+	tltest-journal-json-writer 	\
     tltest-json-esc             \
     tltest-json-overlay         \
     tltest-json-passthrough     \
@@ -80,6 +82,12 @@ tltest_json_sink_LDADD = \
 
 tltest_fd_json_reader_SOURCES = tltest-fd-json-reader.c
 tltest_fd_json_reader_LDADD = \
+    ../../lib/tltest/libtltest.la   \
+    ../../lib/tlog/libtlog.la       \
+    $(JSON_LIBS)
+
+tltest_journal_json_writer_SOURCES = tltest-journal-json-writer.c
+tltest_journal_json_writer_LDADD = \
     ../../lib/tltest/libtltest.la   \
     ../../lib/tlog/libtlog.la       \
     $(JSON_LIBS)
