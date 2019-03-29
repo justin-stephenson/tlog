@@ -6,6 +6,7 @@ import stat
 import time
 import socket
 import inspect
+import subprocess
 from shutil import copyfile
 from tempfile import mkdtemp
 from systemd import journal
@@ -111,6 +112,28 @@ def mkcfgfile(filename, content):
     with open(filename, 'w') as out:
         out.write(content)
 
+def test_record_journal_setting_priority():
+    """
+    Write and validate a journal message written with a
+    non-default priority
+    """
+    priority = 'err'
+    expected_priority_num = 3
+    msgtext = 'test_journal_priority'
+
+    subprocess.call(['tlog-rec', '-w', 'journal',
+    f'--journal-priority={priority}', 'echo', f'{msgtext}'])
+
+    entry = journal_find_last()
+    message = entry['MESSAGE']
+    priority_entry = entry['PRIORITY']
+
+    # match the message text to ensure we found the right message
+    out_txt = ast.literal_eval(message)['out_txt']
+    assert msgtext in out_txt
+    # validate the priority field
+    priority_entry = entry['PRIORITY']
+    assert priority_entry == expected_priority_num
 
 class TestTlogRec:
     """ tlog-rec tests """
