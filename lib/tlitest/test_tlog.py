@@ -135,6 +135,26 @@ def test_record_journal_setting_priority():
     priority_entry = entry['PRIORITY']
     assert priority_entry == expected_priority_num
 
+def test_record_journal_tlog_fields():
+    """
+    Check that documented TLOG_ journal fields
+    are added to journal messages
+    """
+    msgtext = 'test_record_journal_tlog_fields'
+    subprocess.call(['tlog-rec', '-w', 'journal', 'echo', f'{msgtext}'])
+
+    entry = journal_find_last()
+    message = entry['MESSAGE']
+
+    # match the message text to ensure we found the right message
+    out_txt = ast.literal_eval(message)['out_txt']
+
+    assert msgtext in out_txt
+    fields = ['TLOG_USER', 'TLOG_SESSION', 'TLOG_REC', 'TLOG_ID']
+    for f in fields:
+        value = entry[f]
+        assert value
+
 class TestTlogRec:
     """ tlog-rec tests """
     orig_hostname = socket.gethostname()
