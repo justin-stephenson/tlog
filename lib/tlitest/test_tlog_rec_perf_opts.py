@@ -1,6 +1,7 @@
 """ tlog tests """
 import os
 import stat
+import pexpect
 from tempfile import mkdtemp
 
 from misc import ssh_pexpect, \
@@ -20,9 +21,8 @@ class TestTlogRecPerformanceOptions:
         Check tlog-rec caches data some time before logging
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         opts = '--latency=9'
-        shell.sendline('tlog-rec {} '
+        shell = pexpect.spawn('tlog-rec {} '
                        '-o {} /bin/bash'.format(opts, logfile))
         for num in range(0, 200):
             shell.sendline('echo test_{}'.format(num))
@@ -35,9 +35,8 @@ class TestTlogRecPerformanceOptions:
         Check tlog-rec limits output payload size
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         opts = '--payload=128'
-        shell.sendline('tlog-rec {} '
+        shell = pexpect.spawn('tlog-rec {} '
                        '-o {} /bin/bash'.format(opts, logfile))
         for num in range(0, 200):
             shell.sendline('echo test_{}'.format(num))
@@ -50,9 +49,8 @@ class TestTlogRecPerformanceOptions:
         Check tlog-rec records session with limit-rate argument
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         opts = '--limit-rate=10'
-        shell.sendline('tlog-rec {} '
+        shell = pexpect.spawn('tlog-rec {} '
                        '-o {} /bin/bash'.format(opts, logfile))
         for num in range(0, 200):
             shell.sendline('echo test_{}'.format(num))
@@ -64,9 +62,8 @@ class TestTlogRecPerformanceOptions:
         Check tlog-rec allows limited burst of fast output
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         opts = '--limit-rate=10 --limit-burst=100'
-        shell.sendline('tlog-rec {} '
+        shell = pexpect.spawn('tlog-rec {} '
                        '-o {} /bin/bash'.format(opts, logfile))
         for num in range(0, 200):
             shell.sendline('echo test_{}'.format(num))
@@ -78,24 +75,23 @@ class TestTlogRecPerformanceOptions:
         Check tlog-rec drops output when logging limit reached
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         opts = '--limit-rate=10 --limit-action=drop'
         cmd = 'cat /usr/share/dict/linux.words'
-        shell.sendline('tlog-rec {} '
+        shell = pexpect.spawn('tlog-rec {} '
                        '-o {} {}'.format(opts, logfile, cmd))
         shell.close()
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
+        shell = pexpect.spawn('/bin/bash')
         check_recording_missing(shell, 'Byronite', logfile)
         check_recording_missing(shell, 'zygote', logfile)
+        shell.close()
 
     def test_record_fast_input_with_limit_action_delay(self):
         """
         Check tlog-rec delays recording when logging limit reached
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         opts = '--limit-rate=10 --limit-action=delay'
-        shell.sendline('tlog-rec {} '
+        shell = pexpect.spawn('tlog-rec {} '
                        '-o {} /bin/bash'.format(opts, logfile))
         for num in range(0, 200):
             shell.sendline('echo test_{}'.format(num))
@@ -109,9 +105,8 @@ class TestTlogRecPerformanceOptions:
         Check tlog-rec ignores logging limits
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         opts = '--limit-rate=10 --limit-action=pass'
-        shell.sendline('tlog-rec {} '
+        shell = pexpect.spawn('tlog-rec {} '
                        '-o {} /bin/bash'.format(opts, logfile))
         for num in range(0, 200):
             shell.sendline('echo test_{}'.format(num))

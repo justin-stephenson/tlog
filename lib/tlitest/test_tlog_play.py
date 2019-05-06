@@ -14,7 +14,6 @@ from misc import ssh_pexpect, journal_find_last, \
 
 class TestTlogPlay:
     """ Tests for tlog-play basic usage """
-    user1 = 'tlitestlocaluser1'
     tempdir = mkdtemp(prefix='/tmp/TestTlogPlay.')
     os.chmod(tempdir, stat.S_IRWXU + stat.S_IRWXG + stat.S_IRWXO +
              stat.S_ISUID + stat.S_ISGID + stat.S_ISVTX)
@@ -24,17 +23,25 @@ class TestTlogPlay:
         Check tlog-play can playback session from file
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        mkrecording(shell, logfile)
-        shell.sendline('tlog-play -i {}'.format(logfile))
+        mkrecording(logfile)
+        shell = pexpect.spawn('tlog-play -i {}'.format(logfile))
         shell.expect('KNOWN BUGS')
 
     def test_play_from_journal(self):
         """
         Check tlog-play can playback session from journal
         """
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        mkrecording(shell, sleep=4)
+        opts = '-w journal'
+        sleep = 4
+        shell = pexpect.spawn('tlog-rec {}'.format(opts))
+        time.sleep(3)
+        shell.sendline('uname')
+        shell.expect('Linux')
+        shell.sendline('sleep {0}; echo sleep{0}done'.format(sleep))
+        shell.expect('sleep{}done'.format(sleep), timeout=40)
+        shell.sendline('cat /usr/share/doc/grep/README')
+        shell.expect('KNOWN BUGS:', timeout=30)
+        shell.sendline('exit')
         shell.close()
 
         entry = journal_find_last()
@@ -42,8 +49,7 @@ class TestTlogPlay:
         rec = ast.literal_eval(message)['rec']
         tlog_rec = 'TLOG_REC={}'.format(rec)
         cmd = 'tlog-play -r journal -M {}'.format(tlog_rec)
-        shell2 = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell2.sendline(cmd)
+        shell2 = pexpect.spawn(cmd)
         out = shell2.expect([pexpect.TIMEOUT, 'KNOWN BUGS'], timeout=10)
         assert out == 1
 
@@ -52,25 +58,21 @@ class TestTlogPlay:
         Check tlog-play can playback session at 2x speed
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        mkrecording(shell, logfile, sleep=15)
-        shell.close()
+        mkrecording(logfile, sleep=15)
 
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
         opts = '-i {} --speed=2'.format(logfile)
-        shell.sendline('tlog-play {}'.format(opts))
+        shell = pexpect.spawn('tlog-play {}'.format(opts))
         shell.expect('KNOWN BUGS')
         time_stop = time.time()
-        assert time_stop-time_start < 9
+        assert time_stop-time_start < 10
 
     def test_play_at_goto_points(self):
         """
         Check tlog-play can start playback session from goto points
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {}'.format(logfile))
+        shell = pexpect.spawn('tlog-rec -o {}'.format(logfile))
         shell.sendline('echo start')
         time.sleep(5)
         shell.sendline('echo test_1')
@@ -85,28 +87,25 @@ class TestTlogPlay:
         shell.sendline('exit')
         shell.close()
 
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
         opts = '-i {} -g start'.format(logfile)
-        shell.sendline('tlog-play {}'.format(opts))
+        shell = pexpect.spawn('tlog-play {}'.format(opts))
         shell.expect('end')
         time_stop = time.time()
         assert time_stop-time_start > 15
         shell.close()
 
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
         opts = '-i {} -g end'.format(logfile)
-        shell.sendline('tlog-play {}'.format(opts))
+        shell = pexpect.spawn('tlog-play {}'.format(opts))
         shell.expect('end')
         time_stop = time.time()
         assert time_stop-time_start < 2
         shell.close()
 
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
         opts = '-i {} -g 11'.format(logfile)
-        shell.sendline('tlog-play {}'.format(opts))
+        shell = pexpect.spawn('tlog-play {}'.format(opts))
         shell.expect('end')
         time_stop = time.time()
         assert time_stop-time_start < 8
@@ -117,12 +116,9 @@ class TestTlogPlay:
         Check tlog-play can follow a live running session
         """
         logfile = mklogfile(self.tempdir)
-        shell1 = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell2 = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell2.logfile = sys.stdout
-        shell1.sendline('tlog-rec -o {}'.format(logfile))
+        shell1 = pexpect.spawn('tlog-rec -o {}'.format(logfile))
         time.sleep(1)
-        shell2.sendline('tlog-play -i {} -f'.format(logfile))
+        shell2 = pexpect.spawn('tlog-play -i {} -f'.format(logfile))
         shell1.sendline('echo line1')
         shell2.expect('line1')
         time.sleep(2)
@@ -146,8 +142,7 @@ class TestTlogPlayControl:
     @classmethod
     def setup_class(cls):
         """ create sample recorded session for key control tests """
-        shell = ssh_pexpect(cls.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {}'.format(cls.ctl_log))
+        shell = pexpect.spawn('tlog-rec -o {}'.format(cls.ctl_log))
         shell.sendline('echo start')
         time.sleep(10)
         shell.sendline('echo testime_stop')
@@ -164,9 +159,8 @@ class TestTlogPlayControl:
         """
         Check tlog-play key control goes to end of session
         """
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
-        shell.sendline('tlog-play -i {}'.format(self.ctl_log))
+        shell = pexpect.spawn('tlog-play -i {}'.format(self.ctl_log))
         time.sleep(1)
         shell.sendline('G')
         shell.expect('end')
@@ -178,9 +172,8 @@ class TestTlogPlayControl:
         """
         Check tlog-play key control skips to next packet
         """
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
-        shell.sendline('tlog-play -i {}'.format(self.ctl_log))
+        shell = pexpect.spawn('tlog-play -i {}'.format(self.ctl_log))
         time.sleep(1)
         shell.sendline('.')
         time.sleep(1)
@@ -198,9 +191,8 @@ class TestTlogPlayControl:
         """
         Check tlog-play key control doubles playback speed
         """
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
-        shell.sendline('tlog-play -i {}'.format(self.ctl_log))
+        shell = pexpect.spawn('tlog-play -i {}'.format(self.ctl_log))
         time.sleep(1)
         shell.sendline('}')
         time.sleep(1)
@@ -214,9 +206,8 @@ class TestTlogPlayControl:
         """
         Check tlog-play key control quits playback
         """
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
-        shell.sendline('tlog-play -i {}'.format(self.ctl_log))
+        shell = pexpect.spawn('tlog-play -i {}'.format(self.ctl_log))
         time.sleep(1)
         shell.sendline('q')
         time_stop = time.time()
@@ -229,9 +220,8 @@ class TestTlogPlayControl:
 
         The double speed steps are there as necessary pre-req steps
         """
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         time_start = time.time()
-        shell.sendline('tlog-play -i {}'.format(self.ctl_log))
+        shell = pexpect.spawn('tlog-play -i {}'.format(self.ctl_log))
         time.sleep(1)
         shell.sendline('}')
         time.sleep(1)

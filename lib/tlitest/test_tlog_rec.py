@@ -30,10 +30,10 @@ class TestTlogRec:
         Check tlog-rec preserves output when reording to file
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} whoami'.format(logfile))
-        check_outfile('out_txt\":\"{}'.format(self.user1), logfile)
-        check_recording(shell, self.user1, logfile)
+        uname_output = 'Linux'
+        shell = pexpect.spawn('tlog-rec -o {} uname'.format(logfile))
+        check_outfile(uname_output, logfile)
+        check_recording(shell, uname_output, logfile)
         shell.close()
 
     @pytest.mark.tier1
@@ -66,10 +66,9 @@ class TestTlogRec:
         session in recordings
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {}'.format(logfile))
-        shell.sendline('whoami')
-        shell.expect(self.user1)
+        shell = pexpect.spawn('/usr/bin/tlog-rec -o {}'.format(logfile))
+        shell.sendline('uname')
+        shell.expect('Linux')
         shell.sendline('sleep 2')
         shell.sendline('echo test123')
         shell.expect('test123')
@@ -83,11 +82,10 @@ class TestTlogRec:
         Check tlog-rec preserves binary output in recordings
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         reccmd = 'cat /usr/bin/gzip'
-        shell.sendline('tlog-rec -o {} {}'.format(logfile, reccmd))
-        shell.expect(r'\u0000')
-        check_recording(shell, r'\u0000', logfile)
+        shell = pexpect.spawn('tlog-rec -o {} {}'.format(logfile, reccmd))
+        shell.expect('\u0000')
+        check_recording(shell, '\u0000', logfile)
         shell.close()
 
     def test_record_diff_char_sets(self):
@@ -95,8 +93,8 @@ class TestTlogRec:
         Check tlog-rec preserves non-English I/O in recordings
         """
         logfile = '{}-ru_RU'.format(mklogfile(self.tempdir))
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
+        shell = pexpect.spawn('tlog-rec -o {} /bin/bash'.format(logfile),
+                encoding='utf-8')
         shell.sendline('export LANG=ru_RU.utf8')
         shell.sendline('badcommand')
         shell.sendline('exit')
@@ -105,8 +103,8 @@ class TestTlogRec:
         shell.close()
 
         logfile = '{}-el_GR'.format(mklogfile(self.tempdir))
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
+        shell = pexpect.spawn('tlog-rec -o {} /bin/bash'.format(logfile),
+                encoding='utf-8')
         shell.sendline('export LANG=el_GR.utf8')
         shell.sendline('badcommand')
         shell.sendline('exit')
@@ -115,8 +113,8 @@ class TestTlogRec:
         shell.close()
 
         logfile = '{}-en_US'.format(mklogfile(self.tempdir))
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
+        shell = pexpect.spawn('tlog-rec -o {} /bin/bash'.format(logfile),
+                encoding='utf-8')
         shell.sendline('export LANG=en_US.utf8')
         shell.sendline('echo Watérmân')
         shell.sendline('exit')
@@ -130,12 +128,11 @@ class TestTlogRec:
         Check tlog-rec preserves fast flooded I/O in recordings
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
-        for num in range(0, 2000):
+        shell = pexpect.spawn('tlog-rec -o {} /bin/bash'.format(logfile))
+        for num in range(0, 500):
             shell.sendline('echo test_{}'.format(num))
         shell.sendline('exit')
-        for num in range(0, 2000, 100):
+        for num in range(0, 500, 100):
             check_recording(shell, 'test_{}'.format(num), logfile)
         shell.close()
 

@@ -130,16 +130,16 @@ def mkcfgfile(filename, content):
         out.write(content)
 
 
-def mkrecording(shell, filename=None, sleep=3):
+def mkrecording(filename=None, sleep=3):
     """ Create a standard recording for tests to use """
     if filename is None:
         opts = '-w journal'
     else:
         opts = '-o {}'.format(filename)
-    shell.sendline('stty speed 50')
-    shell.sendline('tlog-rec {}'.format(opts))
-    shell.sendline('id')
-    shell.expect('uid')
+    shell = pexpect.spawn('tlog-rec {}'.format(opts))
+    time.sleep(3)
+    shell.sendline('uname')
+    shell.expect('Linux')
     shell.sendline('sleep {0}; echo sleep{0}done'.format(sleep))
     shell.expect('sleep{}done'.format(sleep), timeout=40)
     shell.sendline('cat /usr/share/doc/grep/README')
