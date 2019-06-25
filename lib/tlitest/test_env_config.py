@@ -36,7 +36,7 @@ def session_env_config_setup():
     copyfile(backup_file, conf_file)
     os.remove(backup_file)
 
-
+@pytest.mark.root_required
 class TestTlogRecSession:
     """ tlog-rec-session tests """
     orig_hostname = socket.gethostname()
@@ -145,6 +145,7 @@ def rec_env_config_setup():
     os.remove(backup_file)
 
 
+@pytest.mark.root_required
 class TestTlogRec:
     """ tlog-rec tests """
     orig_hostname = socket.gethostname()

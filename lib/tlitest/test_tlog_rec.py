@@ -160,6 +160,7 @@ class TestTlogRec:
         shell.sendline('exit')
         shell.close()
 
+    @pytest.mark.root_required
     def test_record_as_admin_user(self):
         """
         Check tlog-rec preserves sudo activity of admin user in
@@ -191,6 +192,7 @@ class TestTlogRec:
     # complains that this method coule be a function.
     #
     # pylint: disable=no-self-use
+    @pytest.mark.root_required
     def test_record_from_different_hostnames(self):
         """
         Check tlog-rec reflects hostname changes in recordings

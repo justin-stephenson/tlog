@@ -6,6 +6,7 @@ import pexpect
 import pytest
 
 
+@pytest.mark.root_required
 class TestTlogPlayRemote:
     """ Test tlog-play for remotely recorded journal sessions """
     bootid = '6211b985bd1e49908726bd24cd514099'
