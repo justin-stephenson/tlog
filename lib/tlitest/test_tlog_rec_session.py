@@ -12,7 +12,9 @@ from misc import check_recording, mklogfile, mkcfgfile, \
 from config import TlogRecConfig, TlogRecSessionConfig
 
 
-SYSTEM_TLOG_REC_SESSION_CONF = "/etc/tlog/tlog-rec-session.conf"
+SYSTEM_TLOG_REC_SESSION_CONF = "/etc/test-tlog-rec-session.conf"
+TEST_TLOG_REC_SESSION_CONF = "/tmp/tlog-rec.conf-test"
+TLOG_REC_SESSION_PROG = "/usr/bin/tlog-rec-session"
 
 class TestTlogRecSession:
     """ Test tlog-rec-session functionality """
@@ -28,10 +30,15 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
+
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile)
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
+
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         shell.sendline('echo {}'.format(myname))
         shell.sendline('exit')
         check_recording(shell, myname, logfile)
@@ -43,9 +50,12 @@ class TestTlogRecSession:
         Check tlog-rec-session preserves session in journal
         """
         myname = inspect.stack()[0][3]
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="journal")
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         shell.sendline('echo {}'.format(myname))
         shell.sendline('exit')
         check_recording(shell, myname)
@@ -57,9 +67,12 @@ class TestTlogRecSession:
         Check tlog-rec-session preserves session via syslog
         """
         myname = inspect.stack()[0][3]
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="syslog")
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         shell.sendline('echo {}'.format(myname))
         shell.sendline('exit')
         check_recording(shell, myname)
@@ -71,10 +84,13 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile,
                                             latency=15)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         for num in range(0, 200):
             shell.sendline('echo {}_{}'.format(myname, num))
         shell.sendline('exit')
@@ -87,13 +103,16 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile,
                                             payload=128)
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
         for num in range(0, 200):
             shell.sendline('echo {}_{}'.format(myname, num))
+        shell.sendline(TLOG_REC_SESSION_PROG)
         shell.sendline('exit')
         check_recording(shell, '{}_199'.format(myname), logfile)
         shell.close()
@@ -105,11 +124,14 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile,
                                             limit_rate=10)
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         for num in range(0, 200):
             shell.sendline('echo {}_{}'.format(myname, num))
         shell.sendline('exit')
@@ -122,12 +144,15 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile,
                                             limit_rate=10,
                                             limit_burst=100)
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         for num in range(0, 200):
             shell.sendline('echo {}_{}'.format(myname, num))
         shell.sendline('exit')
@@ -139,12 +164,15 @@ class TestTlogRecSession:
         Check tlog-rec-session drops output when logging limit reached
         """
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile,
                                             limit_rate=10,
                                             limit_action="drop")
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         shell.sendline('cat /usr/share/dict/linux.words')
         time.sleep(1)
         shell.sendline('exit')
@@ -159,12 +187,15 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile,
                                             limit_rate=500,
                                             limit_action="delay")
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         for num in range(0, 200):
             shell.sendline('echo {}_{}'.format(myname, num))
         shell.sendline('exit')
@@ -177,12 +208,15 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(writer="file",
                                             file_writer_path=logfile,
                                             limit_rate=500,
                                             limit_action="pass")
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         for num in range(0, 200):
             shell.sendline('echo {}_{}'.format(myname, num))
         shell.sendline('exit')
@@ -194,18 +228,20 @@ class TestTlogRecSession:
         Check tlog-rec-session can specify different shell
         """
         logfile = mklogfile(self.tempdir)
+        print(f'logfile is {logfile}')
+        tmp_conf_file = TEST_TLOG_REC_SESSION_CONF
         sessionclass = TlogRecSessionConfig(shell="/usr/bin/tcsh",
                                             writer="file",
                                             file_writer_path=logfile)
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
+        sessionclass.generate_config(TEST_TLOG_REC_SESSION_CONF)
         shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
+        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline(TLOG_REC_SESSION_PROG)
         shell.sendline('echo $SHELL')
         check_recording(shell, '/usr/bin/tcsh', logfile)
         shell.sendline('exit')
 
     @classmethod
     def teardown_class(cls):
-        """ Copy original conf file back into place """
-        filename = SYSTEM_TLOG_REC_SESSION_CONF
-        bkup = '{}.origtest'.format(filename)
-        copyfile(bkup, filename)
+        """ Remove conf file override """
+        os.remove(TEST_TLOG_REC_SESSION_CONF)
