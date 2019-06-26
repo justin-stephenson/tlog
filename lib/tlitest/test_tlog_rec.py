@@ -7,16 +7,20 @@ import socket
 from tempfile import mkdtemp
 
 import pexpect
-
 import pytest
+
+import recording
+import journal
 
 from misc import check_recording, ssh_pexpect, mklogfile, \
                  check_outfile, check_journal, mkcfgfile, \
                  journal_find_last
 
+TLOG_TEST_USER = "tlitestlocaluser1"
 
 class TestTlogRec:
     """ tlog-rec tests """
+    testuser = TLOG_TEST_USER
     orig_hostname = socket.gethostname()
     tempdir = mkdtemp(prefix='/tmp/TestTlogRec.')
     user1 = 'tlitestlocaluser1'
@@ -29,38 +33,39 @@ class TestTlogRec:
         """
         Check tlog-rec preserves output when reording to file
         """
+        writer_type = "file"
+        command = "uname"
+        expected_cmd_output = "Linux"
+
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} whoami'.format(logfile))
-        check_outfile('out_txt\":\"{}'.format(self.user1), logfile)
-        check_recording(shell, self.user1, logfile)
-        shell.close()
+        recording.record_simple_command(writer_type, command, logfile)
+        recording.validate_command_logfile(f'out_txt\":\"{expected_cmd_output}', logfile)
+        recording.validate_command_playback(expected_cmd_output, logfile)
 
     @pytest.mark.tier1
     def test_record_command_to_journal(self):
         """
         Check tlog-rec preserves output when recording to journal
         """
-        match_filter = '_COMM=tlog-rec'
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        reccmd = 'test_record_to_journal'
-        shell.sendline('tlog-rec -w journal echo {}'.format(reccmd))
-        check_journal(reccmd)
-        check_recording(shell, reccmd)
-        shell.close()
+        writer_type = "journal"
+        test_string = 'test_record_to_journal'
+        command = f'echo {test_string}'
+
+        recording.record_simple_command(writer_type, command)
+        recording.validate_command_journal(test_string)
+        recording.validate_command_playback(test_string)
 
     @pytest.mark.tier1
     def test_record_command_to_syslog(self):
         """
         Check tlog-rec preserves output when recording to syslog
         """
-        match_filter = '_COMM=tlog-rec'
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        reccmd = 'test_record_to_syslog'
-        shell.sendline('tlog-rec --writer=syslog echo {}'.format(reccmd))
-        check_journal(reccmd)
-        check_recording(shell, reccmd)
-        shell.close()
+        writer_type = "syslog"
+        test_string = 'test_record_to_syslog'
+        command = f'echo {test_string}'
+
+        recording.record_simple_command(writer_type, command)
+        recording.validate_command_journal(test_string)
 
     def test_record_interactive_session(self):
         """
@@ -68,97 +73,107 @@ class TestTlogRec:
         session in recordings
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {}'.format(logfile))
-        shell.sendline('whoami')
-        shell.expect(self.user1)
-        shell.sendline('sleep 2')
-        shell.sendline('echo test123')
-        shell.expect('test123')
-        shell.sendline('echo test1123out>/tmp/pexpect.test1123out')
-        check_outfile('test1123out', logfile)
-        check_recording(shell, 'test1123out', logfile)
-        shell.close()
+        writer_type = "file"
+        test_string = "test_interactive"
+
+        shell = recording.record_interactive_command(writer_type, logfile)
+        shell.sendline('uname')
+        shell.expect('Linux')
+        shell.sendline(f'echo {test_string}')
+        shell.expect(test_string)
+        shell.sendline('exit')
+
+        recording.validate_command_logfile(test_string, logfile)
+        recording.validate_command_playback(test_string, logfile)
 
     def test_record_binary_output(self):
         """
         Check tlog-rec preserves binary output in recordings
         """
+        writer_type = "file"
+        command = "cat /usr/bin/gzip"
+        expected_cmd_output = '\\u0000'
+
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        reccmd = 'cat /usr/bin/gzip'
-        shell.sendline('tlog-rec -o {} {}'.format(logfile, reccmd))
-        shell.expect(r'\u0000')
-        check_recording(shell, r'\u0000', logfile)
-        shell.close()
+        recording.record_simple_command(writer_type, command, logfile)
+        recording.validate_command_logfile(expected_cmd_output, logfile)
+        recording.validate_command_playback('\u0000', logfile)
+
 
     def test_record_diff_char_sets(self):
         """
         Check tlog-rec preserves non-English I/O in recordings
         """
+        writer_type = "file"
+        encoding = 'utf-8'
+
+        test_string = 'найдена'
         logfile = '{}-ru_RU'.format(mklogfile(self.tempdir))
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
+        shell = recording.record_interactive_command(writer_type, logfile)
         shell.sendline('export LANG=ru_RU.utf8')
         shell.sendline('badcommand')
         shell.sendline('exit')
-        check_outfile('найдена', logfile)
-        check_recording(shell, 'найдена', logfile)
-        shell.close()
 
+        recording.validate_command_logfile(test_string, logfile)
+        recording.validate_command_playback(test_string, logfile,
+                encoding)
+
+        test_string = 'βρέθηκε'
         logfile = '{}-el_GR'.format(mklogfile(self.tempdir))
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
+        shell = recording.record_interactive_command(writer_type, logfile)
         shell.sendline('export LANG=el_GR.utf8')
         shell.sendline('badcommand')
         shell.sendline('exit')
-        check_outfile('βρέθηκε', logfile)
-        check_recording(shell, 'βρέθηκε', logfile)
-        shell.close()
 
+        recording.validate_command_logfile(test_string, logfile)
+        recording.validate_command_playback(test_string, logfile,
+                encoding)
+
+        test_string = 'Watérmân'
         logfile = '{}-en_US'.format(mklogfile(self.tempdir))
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
+        shell = recording.record_interactive_command(writer_type, logfile)
         shell.sendline('export LANG=en_US.utf8')
         shell.sendline('echo Watérmân')
         shell.sendline('exit')
-        check_outfile('Watérmân', logfile)
-        check_recording(shell, 'Watérmân', logfile)
-        shell.expect('Watérmân')
-        shell.close()
+
+        recording.validate_command_logfile(test_string, logfile)
+        recording.validate_command_playback(test_string, logfile,
+                encoding)
 
     def test_record_fast_input(self):
         """
         Check tlog-rec preserves fast flooded I/O in recordings
         """
+        writer_type = "file"
+
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} /bin/bash'.format(logfile))
+        shell = recording.record_interactive_command(writer_type, logfile)
         for num in range(0, 2000):
             shell.sendline('echo test_{}'.format(num))
         shell.sendline('exit')
         for num in range(0, 2000, 100):
-            check_recording(shell, 'test_{}'.format(num), logfile)
-        shell.close()
+            recording.validate_command_logfile(test_string, logfile)
 
     def test_record_as_unprivileged_user(self):
         """
         Check tlog-rec preserves unauthorized activity of
         unprivileged user in recordings
         """
-        logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
+        writer_type = "file"
+        test_string = 'test1123out'
 
-        shell.sendline('tlog-rec -o {}'.format(logfile))
+        logfile = mklogfile(self.tempdir)
+        shell = recording.record_interactive_command(writer_type, logfile)
         shell.sendline('whoami')
         shell.expect(self.user1)
         shell.sendline('echo test1123out')
         shell.sendline('sleep 2')
         shell.sendline('ls -ltr /var/log/audit')
-        check_recording(shell, 'test1123out', logfile)
-        check_recording(shell, 'Permission denied', logfile)
         shell.sendline('exit')
-        shell.close()
+        recording.validate_command_logfile(test_string, logfile)
+        recording.validate_command_playback(test_string, logfile)
+        recording.validate_command_logfile('Permission denied', logfile)
+        recording.validate_command_playback('Permission denied', logfile)
 
     @pytest.mark.root_required
     def test_record_as_admin_user(self):
@@ -188,10 +203,6 @@ class TestTlogRec:
         check_recording(shell, 'audit.log', logfile)
         shell.close()
 
-    # diable no-self-use in this function.  Otherwise pylint
-    # complains that this method coule be a function.
-    #
-    # pylint: disable=no-self-use
     @pytest.mark.root_required
     def test_record_from_different_hostnames(self):
         """
@@ -223,4 +234,3 @@ class TestTlogRec:
     @classmethod
     def teardown_class(cls):
         """ teardown for TestTlogRec """
-        socket.sethostname(cls.orig_hostname)
