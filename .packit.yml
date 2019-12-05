@@ -1,0 +1,16 @@
+specfile_path: tlog.spec
+synced_files:
+  - tlog.spec
+  - .packit.yml
+upstream_package_name: tlog
+downstream_package_name: tlog
+create_tarball_command: ["make", "dist"]
+current_version_command: ["git", "describe", "--abbrev=0"]
+jobs:
+- job: copr_build
+  trigger: pull_request
+  metadata:
+    targets:
+    - fedora-29-x86_64
+    - fedora-30-x86_64
+    - fedora-rawhide-x86_64
