@@ -35,6 +35,8 @@ tlog_pkt_type_to_str(enum tlog_pkt_type type)
         return "window";
     case TLOG_PKT_TYPE_IO:
         return "I/O";
+    case TLOG_PKT_TYPE_EOF:
+        return "EOF";
     default:
         return "unknown";
     }
@@ -115,6 +117,13 @@ tlog_pkt_is_void(const struct tlog_pkt *pkt)
 }
 
 bool
+tlog_pkt_is_eof(const struct tlog_pkt *pkt)
+{
+    assert(tlog_pkt_is_valid(pkt));
+    return pkt->type == TLOG_PKT_TYPE_EOF;
+}
+
+bool
 tlog_pkt_is_equal(const struct tlog_pkt *a, const struct tlog_pkt *b)
 {
     assert(tlog_pkt_is_valid(a));
@@ -177,6 +186,7 @@ tlog_pkt_pos_is_valid(const struct tlog_pkt_pos *pos)
     case TLOG_PKT_TYPE_VOID:
         return pos->val == 0;
     case TLOG_PKT_TYPE_WINDOW:
+    case TLOG_PKT_TYPE_EOF:
         return pos->val <= 1;
     case TLOG_PKT_TYPE_IO:
         return true;
@@ -197,6 +207,7 @@ tlog_pkt_pos_is_in(const struct tlog_pkt_pos *pos,
     case TLOG_PKT_TYPE_VOID:
         return pkt->type != TLOG_PKT_TYPE_VOID;
     case TLOG_PKT_TYPE_WINDOW:
+    case TLOG_PKT_TYPE_EOF:
         return pos->val < 1;
     case TLOG_PKT_TYPE_IO:
         return pos->val < pkt->data.io.len;
@@ -217,6 +228,7 @@ tlog_pkt_pos_is_reachable(const struct tlog_pkt_pos *pos,
     case TLOG_PKT_TYPE_VOID:
         return pos->val == 0;
     case TLOG_PKT_TYPE_WINDOW:
+    case TLOG_PKT_TYPE_EOF:
         return pos->val <= 1;
     case TLOG_PKT_TYPE_IO:
         return pos->val <= pkt->data.io.len;
@@ -283,6 +295,7 @@ tlog_pkt_pos_move_past(struct tlog_pkt_pos *pos, const struct tlog_pkt *pkt)
         pos->val = 0;
         break;
     case TLOG_PKT_TYPE_WINDOW:
+    case TLOG_PKT_TYPE_EOF:
         pos->val = 1;
         break;
     case TLOG_PKT_TYPE_IO:

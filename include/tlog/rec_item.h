@@ -32,7 +32,8 @@
 enum tlog_rec_item {
     TLOG_REC_ITEM_INPUT = 0,
     TLOG_REC_ITEM_OUTPUT,
-    TLOG_REC_ITEM_WINDOW
+    TLOG_REC_ITEM_WINDOW,
+    TLOG_REC_ITEM_EOF
 };
 
 /**

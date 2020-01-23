@@ -264,6 +264,9 @@ tlog_tty_source_read(struct tlog_source *source, struct tlog_pkt *pkt)
         if (tty_source->fd_list[tty_source->fd_idx].revents &
                 (POLLIN | POLLHUP | POLLERR)) {
             ssize_t rc;
+            bool output;
+
+            output = tty_source->fd_idx == TLOG_TTY_SOURCE_FD_IDX_OUT;
 
             rc = read(tty_source->fd_list[tty_source->fd_idx].fd,
                       tty_source->io_buf, tty_source->io_size);
@@ -274,10 +277,11 @@ tlog_tty_source_read(struct tlog_source *source, struct tlog_pkt *pkt)
                 if (clock_gettime(tty_source->clock_id, &ts) < 0) {
                     return TLOG_GRC_ERRNO;
                 }
-                tlog_pkt_init_io(pkt, &ts,
-                                 tty_source->fd_idx ==
-                                    TLOG_TTY_SOURCE_FD_IDX_OUT,
-                                 tty_source->io_buf, false, rc);
+                tlog_pkt_init_io(pkt, &ts, output, tty_source->io_buf, false, rc);
+            } else if (rc == 0) {
+                tty_source->fd_list[tty_source->fd_idx].fd = -1;
+                pkt->type = TLOG_PKT_TYPE_EOF;
+                pkt->data.io.output = output;
             }
             goto success;
         }

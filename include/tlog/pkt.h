@@ -39,6 +39,7 @@ enum tlog_pkt_type {
     TLOG_PKT_TYPE_VOID,     /**< Void (typeless) packet */
     TLOG_PKT_TYPE_WINDOW,   /**< Window size change */
     TLOG_PKT_TYPE_IO,       /**< I/O data */
+    TLOG_PKT_TYPE_EOF,      /**< I/O EOF signal */
     TLOG_PKT_TYPE_NUM       /**< Number of types (not a type itself) */
 };
 
@@ -193,6 +194,15 @@ extern bool tlog_pkt_is_valid(const struct tlog_pkt *pkt);
 extern bool tlog_pkt_is_void(const struct tlog_pkt *pkt);
 
 /**
+ * Check if a packet represents an EOF signal.
+ *
+ * @param pkt   The packet to check.
+ *
+ * @return True if the packet signals an EOF, false otherwise.
+ */
+extern bool tlog_pkt_is_eof(const struct tlog_pkt *pkt);
+
+/**
  * Check if contents of one packet is equal to the contents of another one.
  *
  * @param a     First packet to compare.
@@ -255,6 +265,7 @@ tlog_pkt_pos_is_compatible(const struct tlog_pkt_pos *pos,
     assert(tlog_pkt_pos_is_valid(pos));
     assert(tlog_pkt_is_valid(pkt));
     return pos->type == TLOG_PKT_TYPE_VOID ||
+           pos->type == TLOG_PKT_TYPE_EOF ||
            pos->type == pkt->type;
 }
 
@@ -317,7 +328,9 @@ tlog_pkt_pos_is_comparable(const struct tlog_pkt_pos *a,
     assert(tlog_pkt_pos_is_valid(b));
     return a->type == b->type ||
            a->type == TLOG_PKT_TYPE_VOID ||
-           b->type == TLOG_PKT_TYPE_VOID;
+           b->type == TLOG_PKT_TYPE_VOID ||
+           a->type == TLOG_PKT_TYPE_EOF ||
+           b->type == TLOG_PKT_TYPE_EOF;
 }
 
 /**

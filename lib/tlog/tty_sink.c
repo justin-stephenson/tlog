@@ -113,6 +113,16 @@ tlog_tty_sink_write(struct tlog_sink *sink,
             }
             tlog_pkt_pos_move(ppos, pkt, rc);
         }
+    } else if (pkt->type == TLOG_PKT_TYPE_EOF) {
+        int *fd = pkt->data.io.output ? &tty_sink->out_fd
+                                      : &tty_sink->in_fd;
+
+        if (*fd >= 0) {
+            close(*fd);
+            *fd = -1;
+        }
+
+        tlog_pkt_pos_move_past(ppos, pkt);
     }
 
     return TLOG_RC_OK;

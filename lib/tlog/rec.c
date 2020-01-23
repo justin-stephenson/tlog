@@ -926,7 +926,11 @@ tlog_rec_transfer(struct tlog_errs    **perrs,
                 return_grc = grc;
             }
             break;
-        } else if (tlog_pkt_is_void(&pkt)) {
+        } else if (tlog_pkt_is_void(&pkt) || tlog_pkt_is_eof(&pkt)) {
+            /* Continue transferring I/O on STDIN EOF */
+            if (tlog_pkt_is_eof(&pkt) && !pkt.data.io.output) {
+                continue;
+            }
             break;
         }
     }
