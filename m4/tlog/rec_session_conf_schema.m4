@@ -61,6 +61,14 @@ M4_PARAM(`', `notice', `file-env',
                    `recording and the user shell. Can be used to warn',
                    `the user that the session is recorded.')')m4_dnl
 m4_dnl
+M4_PARAM(`', `update-utmp', `file-env',
+          `M4_TYPE_BOOL(false)', true,
+          `', `', `Enable/disable updating the system utmp file',
+          `If specified as ', `If ',
+          `M4_LINES(`true, creating a USER_PROCESS utmp record will be attempted.',
+                    `The recorded user will require write privileges to update the',
+                    `utmp file, likely as a member of the utmp group.')')m4_dnl
+m4_dnl
 m4_dnl
 m4_dnl Include common schema, but limit its scope to environment
 m4_dnl
