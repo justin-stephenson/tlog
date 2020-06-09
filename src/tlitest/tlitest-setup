@@ -42,7 +42,7 @@ for U in $USERS; do
     if [ $? -ne 0 ]; then
         echo "User [$U] missing...adding"
         useradd -m "$U"
-        echo -e "Secret123\nSecret123" |passwd "$U"
+	echo "$U:Secret123"|chpasswd
     else
         echo "User [$U] already exists...saving"
         echo "$U" >> $USERSFILE

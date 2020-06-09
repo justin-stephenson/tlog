@@ -29,7 +29,7 @@ def session_env_config_setup():
     """ Setup/teardown fixture applied to
     TestTlogRecSession tests"""
     conf_file = SYSTEM_TLOG_REC_SESSION_CONF
-    backup_file = f"{conf_file}-orig"
+    backup_file = "%s-orig" % conf_file
     copyfile(conf_file, backup_file)
     yield session_env_config_setup
     # restore original configuration
@@ -66,11 +66,11 @@ class TestTlogRecSession:
         sessionclass_tmp.generate_config(tmp_conf_file)
 
         shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline('export TLOG_REC_SESSION_CONF_FILE=%s' % tmp_conf_file)
         shell.sendline(TLOG_REC_SESSION_PROG)
         # validate the notice override
         shell.expect(input_notice)
-        shell.sendline(f'echo {msg}')
+        shell.sendline('echo %s' % msg)
         shell.expect(msg)
         shell.sendline('exit')
         check_recording(shell, msg, logfile)
@@ -97,12 +97,12 @@ class TestTlogRecSession:
 
         # validate the notice override
         shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline(f'export TLOG_REC_SESSION_CONF_FILE={tmp_conf_file}')
+        shell.sendline('export TLOG_REC_SESSION_CONF_FILE=%s' % tmp_conf_file)
         shell.sendline('export TLOG_REC_SESSION_CONF_TEXT='
                        '\'{"notice":"TEXT Notice"}\'')
         shell.sendline(TLOG_REC_SESSION_PROG)
         shell.expect("TEXT Notice")
-        shell.sendline(f'echo {msg}')
+        shell.sendline('echo %s' % msg)
         shell.expect(msg)
         shell.sendline('exit')
         shell.close()
@@ -121,12 +121,12 @@ class TestTlogRecSession:
         shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         shell.sendline('export TLOG_REC_SESSION_CONF_TEXT='
                        '\'{"shell":"/bin/zsh"}\'')
-        shell.sendline(f'export TLOG_REC_SESSION_SHELL={input_shell}')
+        shell.sendline('export TLOG_REC_SESSION_SHELL=%s' % input_shell)
         shell.sendline(TLOG_REC_SESSION_PROG)
         shell.expect("ATTENTION")
         shell.sendline("echo $SHELL")
         shell.expect(input_shell)
-        shell.sendline(f'echo {msg}')
+        shell.sendline('echo %s' % msg)
         shell.expect(msg)
         shell.sendline('exit')
         shell.close()
@@ -137,7 +137,7 @@ def rec_env_config_setup():
     """ Setup/teardown fixture applied to
     TestTlogRec tests"""
     conf_file = SYSTEM_TLOG_REC_CONF
-    backup_file = f"{conf_file}-orig"
+    backup_file = "%s-orig" % conf_file
     copyfile(conf_file, backup_file)
     yield rec_env_config_setup
     # restore original configuration
@@ -172,8 +172,8 @@ class TestTlogRec:
 
         # validate the file writer override
         shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline(f'export TLOG_REC_CONF_FILE={tmp_conf_file}')
-        shell.sendline(TLOG_REC_PROG + f"-c echo {msg}")
+        shell.sendline('export TLOG_REC_CONF_FILE=%s' % tmp_conf_file)
+        shell.sendline(TLOG_REC_PROG + "-c echo %s" % msg)
         check_recording(shell, msg, logfile)
         shell.close()
 
@@ -195,9 +195,9 @@ class TestTlogRec:
 
         # validate the file writer override
         shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline(f'export TLOG_REC_CONF_FILE={tmp_conf_file}')
+        shell.sendline('export TLOG_REC_CONF_FILE=%s' % tmp_conf_file)
         shell.sendline('export TLOG_REC_CONF_TEXT=\'{"writer":"file"}\'')
-        shell.sendline(TLOG_REC_PROG + f"-c echo {msg}")
+        shell.sendline(TLOG_REC_PROG + "-c echo %s" % msg)
         check_recording(shell, msg, logfile)
         shell.close()
 
@@ -211,7 +211,7 @@ class TestTlogRec:
         recclass.generate_config(SYSTEM_TLOG_REC_CONF)
 
         shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline(f'export SHELL={input_shell}')
+        shell.sendline('export SHELL=%s' % input_shell)
         shell.sendline(TLOG_REC_PROG)
         shell.sendline("echo $SHELL")
         shell.expect(input_shell)

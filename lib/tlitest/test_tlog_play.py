@@ -59,7 +59,7 @@ class TestTlogPlay:
         outputfile = mklogfile(self.tempdir)
         recordedtext = 'output_test'
         shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline(f'tlog-rec -w journal echo {recordedtext}')
+        shell.sendline('tlog-rec -w journal echo %s' % recordedtext)
         time.sleep(5)
 
         entry = journal_find_last()
@@ -67,7 +67,7 @@ class TestTlogPlay:
         rec = ast.literal_eval(message)['rec']
         tlog_rec = 'TLOG_REC={}'.format(rec)
 
-        playcmd = f'tlog-play -r journal -M {tlog_rec} > {outputfile}'
+        playcmd = 'tlog-play -r journal -M %s > %s' % (tlog_rec, outputfile)
         shell2 = ssh_pexpect(self.user1, 'Secret123', 'localhost')
         shell2.sendline(playcmd)
         time.sleep(5)

@@ -31,6 +31,15 @@ addons:
             - fakeroot
             - patch
             - wget
+            # Integration tests setup
+            - openssh-server
+            - openssh-client
+            - systemd-journal-remote
+            - python3-pytest
+            - python3-pexpect
+            - python3-systemd
+            - tcsh
+            - sshpass
 
 before_install:
 - gem install coveralls-lcov
@@ -40,8 +49,9 @@ before_script:
 - wget https://github.com/debbuild/debbuild/releases/download/18.8.1/debbuild_18.8.1-ascherer.ubuntu16.04_all.deb
 - sudo dpkg -i debbuild_18.8.1-ascherer.ubuntu16.04_all.deb
 - echo "%_default_verbosity 2" >> ~/.debmacros
+- sudo systemctl start sshd
 - autoreconf -i -f
-- $CLANG_SCAN_BUILD ./configure --disable-silent-rules $CONFIGURE_ARGS
+- $CLANG_SCAN_BUILD ./configure --disable-silent-rules $CONFIGURE_ARGS --prefix=/usr --sysconfdir=/etc --localstatedir=/var
 script:
 - $CLANG_SCAN_BUILD make
 - $CLANG_SCAN_BUILD make check
@@ -49,5 +59,8 @@ script:
 - rpmbuild -ta --nodeps tlog-*.tar.gz
 - debbuild -ta tlog-*.tar.gz
 - test "x$DISTCHECK" = xyes && make distcheck || true
+- sudo make install
+- sudo sh -x src/tlitest/tlitest-setup
+- sudo sh -x src/tlitest/tlitest-run -m tier1
 after_success:
 - test "x$COVERAGE" = xyes -a "x$CC" = "xgcc" && lcov --compat-libtool --directory ./lib/tlog/ --capture --output-file coverage.info && coveralls-lcov coverage.info
