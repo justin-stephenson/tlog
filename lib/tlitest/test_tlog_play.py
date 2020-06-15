@@ -27,10 +27,10 @@ class TestTlogPlay:
         Check tlog-play can playback session from file
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        mkrecording(shell, logfile)
-        shell.sendline('tlog-play -i {}'.format(logfile))
-        shell.expect('KNOWN BUGS')
+        child = pexpect.spawn('tlog-rec-session')
+        mkrecording(child, logfile)
+        child.sendline('tlog-play -i {}'.format(logfile))
+        child.expect('KNOWN BUGS')
 
     @pytest.mark.tier1
     def test_play_from_journal(self):
