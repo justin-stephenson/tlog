@@ -1,53 +1,29 @@
 language: c
-sudo: required
-dist: xenial
-env:
-- CONFIGURE_ARGS="" DISTCHECK=yes
-- CONFIGURE_ARGS="--enable-debug" DISTCHECK=yes
-- CONFIGURE_ARGS="--disable-debug" DISTCHECK=yes
-- COVERAGE=yes CFLAGS="--coverage" LDFLAGS="--coverage" CONFIGURE_ARGS="--enable-debug"
-- CLANG_SCAN_BUILD="scan-build --status-bugs"
-compiler:
-- clang
-- gcc
 os: linux
+sudo: true
+
+env:
+  - DIST=fedora
+#  - DIST=centos8
+
+# podman is currently not in Ubuntu
 addons:
-    apt:
-        packages:
-            - autoconf
-            - libjson-c-dev
-            - libcurl4-gnutls-dev
-            - libsystemd-dev
-            - clang
-            - lcov
-            - rpm
-            - lsb-release
-            - xz-utils
-            - perl
-            - sed
-            - dpkg-dev
-            - pax
-            - bzip2
-            - fakeroot
-            - patch
-            - wget
+  apt:
+    update: true
+    sources:
+      - sourceline: "ppa:projectatomic/ppa"
+    packages:
+      - podman
+      - slirp4netns
 
 before_install:
-- gem install coveralls-lcov
-- mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS,SDEBS,DEBS}
-- ln -sr ~/rpmbuild ~/debbuild
-before_script:
-- wget https://github.com/debbuild/debbuild/releases/download/18.8.1/debbuild_18.8.1-ascherer.ubuntu16.04_all.deb
-- sudo dpkg -i debbuild_18.8.1-ascherer.ubuntu16.04_all.deb
-- echo "%_default_verbosity 2" >> ~/.debmacros
-- autoreconf -i -f
-- $CLANG_SCAN_BUILD ./configure --disable-silent-rules $CONFIGURE_ARGS
+  # podman needs a basic register set up (packaging bug in the ppa)
+  - sudo mkdir -p /etc/containers
+  - echo -e "[registries.search]\nregistries = ['docker.io']" | sudo tee /etc/containers/registries.conf
+  # we need to register travis to allow subuid/gid for the rootless execution
+  - echo "travis:110000:65535" | sudo tee /etc/subuid
+  - echo "travis:110000:65535" | sudo tee /etc/subgid
+
 script:
-- $CLANG_SCAN_BUILD make
-- $CLANG_SCAN_BUILD make check
-- make distcheck
-- rpmbuild -ta --nodeps tlog-*.tar.gz
-- debbuild -ta tlog-*.tar.gz
-- test "x$DISTCHECK" = xyes && make distcheck || true
-after_success:
-- test "x$COVERAGE" = xyes -a "x$CC" = "xgcc" && lcov --compat-libtool --directory ./lib/tlog/ --capture --output-file coverage.info && coveralls-lcov coverage.info
+  - podman build -t $DIST .
+  - podman run $DIST

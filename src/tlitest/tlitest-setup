@@ -9,7 +9,6 @@ python3-pexpect
 python3-systemd
 tcsh
 sshpass
-tlog
 "
 PKGSFILE="/tmp/tlitest-setup_packages_found"
 if [ -f "$PKGSFILE" ]; then
