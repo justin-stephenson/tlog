@@ -28,14 +28,13 @@ class TestTlogRecSession:
         """
         myname = inspect.stack()[0][3]
         logfile = mklogfile(self.tempdir)
-        sessionclass = TlogRecSessionConfig(writer="file",
-                                            file_writer_path=logfile)
-        sessionclass.generate_config(SYSTEM_TLOG_REC_SESSION_CONF)
-        shell = ssh_pexpect(self.user, 'Secret123', 'localhost')
-        shell.sendline('echo {}'.format(myname))
-        shell.sendline('exit')
-        check_recording(shell, myname, logfile)
-        shell.close()
+        child = pexpect.spawn('tlog-rec-session')
+        child.sendline('echo {}'.format(myname)) 
+        child.sendline('exit')
+        child.close()
+        child2 = pexpect.spawn('tlog-play -i {}'.format(logfile))
+        child2.expect("uid")
+        child2.close()
 
     @pytest.mark.tier1
     def test_session_record_to_journal(self):

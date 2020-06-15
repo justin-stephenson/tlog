@@ -144,5 +144,5 @@ def mkrecording(shell, filename=None, sleep=3):
     shell.sendline('stty speed 50')
     shell.sendline('tlog-rec {}'.format(opts))
     shell.sendline('id')
-    shell.sendline('cat /usr/share/doc/grep/README')
+    shell.sendline('lsblk')
     shell.sendline('exit')

@@ -6,23 +6,12 @@ env:
   - DIST=fedora
 #  - DIST=centos8
 
-# podman is currently not in Ubuntu
-addons:
-  apt:
-    update: true
-    sources:
-      - sourceline: "ppa:projectatomic/ppa"
-    packages:
-      - podman
-      - slirp4netns
-
 before_install:
-  # podman needs a basic register set up (packaging bug in the ppa)
-  - sudo mkdir -p /etc/containers
-  - echo -e "[registries.search]\nregistries = ['docker.io']" | sudo tee /etc/containers/registries.conf
-  # we need to register travis to allow subuid/gid for the rootless execution
-  - echo "travis:110000:65535" | sudo tee /etc/subuid
-  - echo "travis:110000:65535" | sudo tee /etc/subgid
+  - . /etc/os-release
+  - sudo sh -c "echo 'deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /' > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list"
+  - curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key | sudo apt-key add -
+  - sudo apt-get update -qq
+  - sudo apt-get -qq -y install podman
 
 script:
   - podman build -t $DIST .

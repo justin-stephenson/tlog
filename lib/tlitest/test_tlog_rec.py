@@ -17,7 +17,7 @@ from misc import check_recording, ssh_pexpect, mklogfile, \
 
 class TestTlogRec:
     """ tlog-rec tests """
-    orig_hostname = socket.gethostname()
+    #orig_hostname = socket.gethostname()
     tempdir = mkdtemp(prefix='/tmp/TestTlogRec.')
     user1 = 'tlitestlocaluser1'
     admin1 = 'tlitestlocaladmin1'
@@ -30,11 +30,12 @@ class TestTlogRec:
         Check tlog-rec preserves output when reording to file
         """
         logfile = mklogfile(self.tempdir)
-        shell = ssh_pexpect(self.user1, 'Secret123', 'localhost')
-        shell.sendline('tlog-rec -o {} whoami'.format(logfile))
-        check_outfile('out_txt\":\"{}'.format(self.user1), logfile)
-        check_recording(shell, self.user1, logfile)
-        shell.close()
+        child = pexpect.spawn('tlog-rec -o {} id'.format(logfile))
+        check_outfile('out_txt\":\"{}'.format("uid"), logfile)
+        child.close()
+        child2 = pexpect.spawn('tlog-play -i {}'.format(logfile))
+        child2.expect("uid")
+        child2.close()
 
     @pytest.mark.tier1
     def test_record_command_to_journal(self):

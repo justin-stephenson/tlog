@@ -18,4 +18,4 @@ RUN ./configure --disable-dependency-tracking --disable-silent-rules --prefix=/u
 RUN sudo make install
 RUN src/tlitest/tlitest-setup
 
-CMD src/tlitest/tlitest-run -k play_from_file
+CMD src/tlitest/tlitest-run -m tier1 --ignore-glob='*journal*'
