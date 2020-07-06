@@ -9,7 +9,6 @@ python3-pexpect
 python3-systemd
 tcsh
 sshpass
-tlog
 "
 PKGSFILE="/tmp/tlitest-setup_packages_found"
 if [ -f "$PKGSFILE" ]; then
@@ -59,3 +58,9 @@ echo "%wheel        ALL=(ALL)       NOPASSWD: ALL" > \
 usermod tlitestlocaladmin1 -aG wheel,systemd-journal
 usermod tlitestlocaluser1 -aG systemd-journal
 usermod tlitestlocaluser2 -s /usr/bin/tlog-rec-session
+
+rm -rf /var/run/tlog/*
+chown tlog:tlog /var/run/tlog
+chown tlog:tlog /usr/bin/tlog-rec-session
+chmod u+s /usr/bin/tlog-rec-session
+chmod g+s /usr/bin/tlog-rec-session
