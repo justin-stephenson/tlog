@@ -25,7 +25,7 @@ jobs:
     - name: Setup ./configure
       run: sudo podman exec ${CONTAINER} autoreconf -if
     - name: Configure
-      run: sudo podman exec ${CONTAINER} ./configure --disable-dependency-tracking --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+      run: sudo podman exec ${CONTAINER} ./configure --disable-dependency-tracking --sysconfdir=/etc --localstatedir=/var
     - name: Make dist
       run: sudo podman exec ${CONTAINER} make dist
     - name: Build and Install the RPM
@@ -54,7 +54,7 @@ jobs:
     - name: Setup ./configure
       run: sudo podman exec ${CONTAINER} autoreconf -if
     - name: Configure
-      run: sudo podman exec ${CONTAINER} ./configure --enable-debug --disable-dependency-tracking --enable-utempter --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+      run: sudo podman exec ${CONTAINER} ./configure --enable-debug --disable-dependency-tracking --enable-utempter --sysconfdir=/etc --localstatedir=/var
     - name: Make install
       run: sudo podman exec ${CONTAINER} make install
     - name: Integration tests setup
