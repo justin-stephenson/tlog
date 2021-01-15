@@ -9,6 +9,7 @@
 
 %if "%{_vendor}" == "debbuild"
 # Set values to make debian builds work well
+%global _defaultdocdir /usr/share/doc/%{name}
 %global _buildshell /bin/bash
 %global _lib lib/%(%{__dpkg_architecture} -qDEB_HOST_MULTIARCH)
 %endif
@@ -18,7 +19,7 @@
 %{!?make_build:%global make_build %{__make} %{?_smp_mflags}}
 
 Name:           tlog
-Version:        10
+Version:        11
 Release:        1%{?dist}
 Summary:        Terminal I/O logger
 
@@ -61,7 +62,11 @@ Requires(postun): systemd
 %else
 BuildRequires:  pkgconfig(json-c)
 BuildRequires:  pkgconfig(libcurl)
+%if %{defined suse_version}
+BuildRequires:  utempter-devel
+%else
 BuildRequires:  libutempter-devel
+%endif
 
 %if %{with systemd}
 BuildRequires:  pkgconfig(libsystemd)
@@ -79,7 +84,7 @@ in JSON format.
 %setup -q
 
 %build
-%configure --disable-rpath --disable-static --enable-utempter %{!?with_systemd:--disable-journal}
+%configure --disable-rpath --disable-static --enable-utempter %{!?with_systemd:--disable-journal} --docdir=%{_defaultdocdir}/%{name}
 %make_build
 
 %check
@@ -153,6 +158,8 @@ systemd-tmpfiles --create %{name}.conf >/dev/null 2>&1 || :
 %changelog
 * Tue Oct 13 2020 Justin Stephenson <jstephen@redhat.com> - 10-1
 - Release v10
+- Correct suse rpmbuild
+- Update debbuild for travis CI
 
 * Thu May 28 2020 Justin Stephenson <jstephen@redhat.com> - 9-1
 - Release v9
