@@ -1,0 +1,72 @@
+name: cppcheck
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '30 0 * * *'
+jobs:
+  ## Runs once daily at 00:30 to generate base report
+  cppcheck_create_base:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install
+        run: |
+          sudo apt update
+          sudo apt install -y cppcheck
+
+      - name: Execute base cppcheck
+        run: cppcheck --enable=all --output-file=cppcheck_report.txt .
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+      - name: Upload report
+        uses: actions/upload-artifact@v2
+        with:
+          name: cppcheck-base-${{ steps.date.outputs.date }}
+          path: cppcheck_report.txt
+
+  ## Download base report, run cppcheck and diff against base report
+  cppcheck_run_diff:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install
+        run: |
+          sudo apt update
+          sudo apt install -y cppcheck
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+      - name: Get artifact ID
+        id: dlbase
+        run: |
+          echo "::set-output name=curlcmd::$(curl -H "Accept: application/vnd.github.v3+json" $REPO_URL | jq ".artifacts[] | select(.name==\"$FILENAME\") | .archive_download_url")"
+        env:
+          REPO_URL: https://api.github.com/repos/justin-stephenson/tlog/actions/artifacts
+          FILENAME: cppcheck-base-${{ steps.date.outputs.date }}
+
+      - name: Download artifact
+        run: |
+          curl -L -vv -u "justin-stephenson:${{ secrets.GITHUB_TOKEN }}" ${{ steps.dlbase.outputs.curlcmd }} -o cppcheck_base.zip
+          unzip cppcheck_base.zip
+
+      - name: Execute cppcheck from checkout
+        run: cppcheck --enable=all --output-file=cppcheck_checkout_report.txt .
+
+      - name: Diff reports
+        run: diff cppcheck_checkout_report.txt cppcheck_report.txt
