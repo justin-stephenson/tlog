@@ -1,0 +1,19 @@
+name: Caching test
+
+on: [push, pull_request]
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create test file
+      run: echo test > /opt/testfile
+
+    - name: Cache test files
+      uses: actions/cache@v2
+      with:
+        path: /opt/testfile
+        key: ${{ runner.os }}-testfile-v2
+
+    - name: Print file contents
+      run: cat /opt/testfile
