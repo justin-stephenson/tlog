@@ -1,6 +1,5 @@
 name: cppcheck
 on:
-  push:
   pull_request:
   schedule:
     - cron: '30 0 * * *'
@@ -34,9 +33,11 @@ jobs:
           path: cppcheck_report.txt
 
   ## Download base report, run cppcheck and diff against base report
+  # Runs on a container to use fedora packaged 'csdiff' utility
   cppcheck_run_diff:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    container: fedora:latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -45,8 +46,7 @@ jobs:
 
       - name: Install
         run: |
-          sudo apt update
-          sudo apt install -y cppcheck
+          sudo dnf install -y cppcheck csdiff jq unzip
 
       - name: Get current date
         id: date
@@ -69,4 +69,4 @@ jobs:
         run: cppcheck --enable=all --output-file=cppcheck_checkout_report.txt .
 
       - name: Diff reports
-        run: diff cppcheck_checkout_report.txt cppcheck_report.txt
+        run: csdiff cppcheck_report.txt cppcheck_checkout_report.txt

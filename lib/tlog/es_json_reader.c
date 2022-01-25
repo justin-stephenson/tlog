@@ -457,7 +457,6 @@ tlog_es_json_reader_read(struct tlog_json_reader *reader,
     struct json_object *hit;
     struct json_object *object;
     struct json_object *field;
-    int64_t id;
 
     /* If we're outside the array */
     if (es_json_reader->idx >=
@@ -474,6 +473,7 @@ tlog_es_json_reader_read(struct tlog_json_reader *reader,
             es_json_reader->array_idx + es_json_reader->array_len) {
         object = NULL;
     } else {
+        int64_t id;
         /* Get next object from the array */
         hit = json_object_array_get_idx(es_json_reader->array,
                                         es_json_reader->idx -
