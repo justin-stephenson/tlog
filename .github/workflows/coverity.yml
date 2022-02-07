@@ -3,7 +3,7 @@ on:
   # run daily at 12:30 UTC due to
   # https://scan.coverity.com/faq#frequency
   schedule:
-    - cron:  '* * * * *'
+    - cron:  '*/20 * * * *'
     #- cron:  '30 12 * * *'
 
 jobs:
