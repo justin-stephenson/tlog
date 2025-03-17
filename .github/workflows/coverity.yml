@@ -4,7 +4,9 @@ on:
   # https://scan.coverity.com/faq#frequency
   schedule:
     - cron:  '30 12 * * *'
-
+  pull_request:
+    branches:
+      - main
 jobs:
   coverity:
     runs-on: ubuntu-latest
@@ -19,6 +21,17 @@ jobs:
        pkg-config libjson-c-dev libsystemd-dev libcurl-*-dev \
        libutempter-dev
 
+    - name: Set test variable
+      run: |
+        if [ ${{ github.event_name }} == 'pull_request' ]; then
+          echo "IS PULL REQUEST"
+          echo "DESCRIPTION=pr${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+        else
+          echo "NOT PR"
+          echo "DESCRIPTION=othereventtestdesc" >> $GITHUB_ENV
+        fi
+      shell: bash
+
     - name: Configure
       run: autoreconf -if && ./configure
 
@@ -27,3 +40,4 @@ jobs:
       with:
         email: 'jstephen@redhat.com'
         token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+        description: ${{ env.DESCRIPTION }}
